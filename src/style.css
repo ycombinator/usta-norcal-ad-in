@@ -22,12 +22,12 @@
   color: #fff;
 }
 
-.rating-pill h4 {
+.rating-pill .pill-label {
   color: #fff;
   font-size: smaller;
+  font-weight: bold;
   margin: auto 4px auto 0px;
   padding: 0px;
-  display: unset;
 }
 
 .tr-info {
@@ -38,7 +38,7 @@
   background: darkblue;
 }
 
-.tr-info h4 {
+.tr-info .pill-label {
   background-color: blueviolet;
 }
 
@@ -50,6 +50,6 @@
   background: #1a6b3c;
 }
 
-.utr-info h4 {
+.utr-info .pill-label {
   background-color: #0d3d22;
 }

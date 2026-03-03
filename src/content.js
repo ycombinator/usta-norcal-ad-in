@@ -19,7 +19,8 @@ function showRating(info, trURL, rating) {
         content.innerText = `${rating}`
     }
 
-    const head = document.createElement('h4')
+    const head = document.createElement('span')
+    head.className = 'pill-label'
     head.innerText = "TR"
 
     info.appendChild(head)
@@ -179,7 +180,8 @@ function showUTRLogin(container) {
     const info = document.createElement('span')
     info.className = 'rating-pill utr-info'
 
-    const head = document.createElement('h4')
+    const head = document.createElement('span')
+    head.className = 'pill-label'
     head.innerText = "UTR"
     info.appendChild(head)
 
@@ -203,7 +205,8 @@ function showLoadingUTR(container, label) {
 function showUTRRating(info, label, profileURL, rating) {
     info.innerText = ""
 
-    const head = document.createElement('h4')
+    const head = document.createElement('span')
+    head.className = 'pill-label'
     head.innerText = label
     info.appendChild(head)
 
