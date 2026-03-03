@@ -18,6 +18,7 @@ function showRating(info, trURL, rating) {
     } else {
         content = document.createElement('span')
         content.innerText = `${rating}`
+        if (rating === "❔") content.title = "Rating not found on TennisRecord"
     }
 
     const head = document.createElement('span')
@@ -224,6 +225,7 @@ function showUTRRating(info, label, profileURL, rating) {
     } else {
         content = document.createElement('span')
         content.innerText = rating != null ? `${rating}` : "❔"
+        if (rating == null) content.title = "Rating not found on UTR"
     }
     info.appendChild(content)
 }
