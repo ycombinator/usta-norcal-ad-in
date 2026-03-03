@@ -123,6 +123,11 @@ async function showTRInfo(container, id) {
         for (let s = 1; s <= 20; s++) {
             console.log(`returning tennis record player page body for ${firstName} ${lastName} (${s}) from source`)
             const { url, body } = await fetchTennisRecordPlayerPage(firstName, lastName, s)
+            if (!body) {
+                showRating(info, "", "🚫")
+                info.querySelector('span:last-child').title = "TennisRecord lookup failed"
+                return
+            }
             const { trLocation, trRating } = parseTennisRecordPlayerPage(body, firstName, lastName)
             if (location == trLocation) {
                 // console.log("location match!")
@@ -381,8 +386,6 @@ async function fetchTennisRecordPlayerPage(firstName, lastName, s) {
     const url = `https://www.tennisrecord.com/adult/profile.aspx?playername=${firstName}%20${lastName}&s=${s}`
     return new Promise((resolve, reject) => {
         chrome.runtime.sendMessage({type: "fetchPage", url}, body => {
-            // console.log(body)
-            // tennisRecordPlayerPageCache[cacheKey] = body
             resolve({url, body})
         })
     })

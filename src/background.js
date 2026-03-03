@@ -4,6 +4,7 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
             fetch(message.url)
                 .then(res => res.text())
                 .then(body => sendResponse(body))
+                .catch(err => { console.error(err); sendResponse(null) })
             break
         case "fetchJSON":
             fetch(message.url, { credentials: 'include' })
