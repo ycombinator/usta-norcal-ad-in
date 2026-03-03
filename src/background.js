@@ -13,10 +13,12 @@ chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
                 .then(data => { console.log(data); sendResponse(data) })
                 .catch(err => { console.error(err); sendResponse(null) })
             break
-        case "checkUTRAuth":
-            chrome.cookies.get({ url: "https://app.utrsports.net", name: "JWT" }, cookie => {
-                sendResponse(cookie !== null)
-            })
+        case "fetchJSONWithStatus":
+            console.log({message})
+            fetch(message.url, { credentials: 'include' })
+                .then(res => res.json().then(data => ({ status: res.status, data })))
+                .then(result => { console.log("fetchJSONWithStatus result:", JSON.stringify(result)); sendResponse(result) })
+                .catch(err => { console.error(err); sendResponse(null) })
             break
     }
     return true

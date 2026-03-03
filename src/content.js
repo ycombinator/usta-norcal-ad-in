@@ -137,14 +137,6 @@ async function showUTRInfo(container, id) {
     const singlesInfo = showLoadingUTR(container, "UTR-S")
     const doublesInfo = showLoadingUTR(container, "UTR-D")
 
-    const loggedIn = await checkUTRAuth()
-    if (!loggedIn) {
-        singlesInfo.remove()
-        doublesInfo.remove()
-        showUTRLogin(container)
-        return
-    }
-
     // Reuse the already-fetched USTA NorCal player page for name and location.
     let data = await chrome.storage.session.get("ustaNorCalPlayerPageCache");
     const cache = data.ustaNorCalPlayerPageCache || {}
@@ -159,6 +151,13 @@ async function showUTRInfo(container, id) {
 
     // One UTR API call returns both singles and doubles ratings for each player.
     const player = await fetchUTRPlayer(firstName, lastName, location, lat, lng)
+
+    if (player === UTR_AUTH_REQUIRED) {
+        singlesInfo.remove()
+        doublesInfo.remove()
+        showUTRLogin(container)
+        return
+    }
 
     if (!player) {
         showUTRRating(singlesInfo, "UTR-S", null, null)
@@ -175,15 +174,10 @@ async function showUTRInfo(container, id) {
     showUTRRating(doublesInfo, "UTR-D", profileURL, doublesUtr)
 }
 
-async function checkUTRAuth() {
-    return new Promise(resolve => {
-        chrome.runtime.sendMessage({ type: "checkUTRAuth" }, resolve)
-    })
-}
 
 function showUTRLogin(container) {
     const info = document.createElement('span')
-    info.className = 'rating-pill utr-info'
+    info.className = 'rating-pill utr-login'
 
     const head = document.createElement('span')
     head.className = 'pill-label'
@@ -193,7 +187,7 @@ function showUTRLogin(container) {
     const link = document.createElement('a')
     link.href = "https://app.utrsports.net/login"
     link.target = '_blank'
-    link.innerText = "login"
+    link.innerText = "🔒 login"
     info.appendChild(link)
 
     container.appendChild(info)
@@ -248,6 +242,8 @@ async function geocodeLocation(location) {
     })
 }
 
+const UTR_AUTH_REQUIRED = Symbol('UTR_AUTH_REQUIRED')
+
 async function fetchUTRPlayer(firstName, lastName, location, lat, lng) {
     const query = `${firstName} ${lastName}`
     const params = new URLSearchParams({
@@ -266,10 +262,16 @@ async function fetchUTRPlayer(firstName, lastName, location, lat, lng) {
 
     const url = `https://api.utrsports.net/v2/search/players?${params}`
     return new Promise(resolve => {
-        chrome.runtime.sendMessage({ type: "fetchJSON", url }, data => {
+        chrome.runtime.sendMessage({ type: "fetchJSONWithStatus", url }, result => {
+            if (!result) return resolve(null)
+            const data = result.data
             if (!data) return resolve(null)
             // NOTE: adjust the path below if the API response shape differs.
             const hits = data.hits?.hits ?? data.hits ?? []
+            // Detect unauthenticated: UTR returns showDecimals=false and masked "0.xx" ratings when not logged in
+            if (hits.length > 0 && (hits[0]._source ?? hits[0].source ?? hits[0]).showDecimals === false) {
+                return resolve(UTR_AUTH_REQUIRED)
+            }
             const name = `${firstName} ${lastName}`.toLowerCase()
             const match = hits.find(h => {
                 const src = h._source ?? h.source ?? h

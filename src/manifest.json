@@ -4,12 +4,12 @@
   "version": "0.1.0",
   "description": "Enhance USTA NorCal UIs with information and functionality",
   "permissions": [
-    "storage",
-    "cookies"
+    "storage"
   ],
   "host_permissions": [
     "https://www.tennisrecord.com/*",
     "https://api.utrsports.net/*",
+    "https://app.utrsports.net/*",
     "https://nominatim.openstreetmap.org/*"
   ],
   "action": {

@@ -70,3 +70,15 @@
 .utr-info .pill-label {
   background-color: #0d3d22;
 }
+
+.utr-login {
+  background: #666;
+}
+
+.utr-login a:hover {
+  background: #666;
+}
+
+.utr-login .pill-label {
+  background-color: #444;
+}
