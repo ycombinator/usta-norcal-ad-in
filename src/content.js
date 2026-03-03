@@ -6,6 +6,7 @@ let utrRecordRatingCache, utrRecordPlayerAPICache
 
 function showRating(info, trURL, rating) {
     // console.log({info, trURL, rating})
+    info.classList.remove('loading')
     info.innerText = ""
 
     let content
@@ -29,8 +30,12 @@ function showRating(info, trURL, rating) {
 
 function showLoading(container) {
     const info = document.createElement('span');
-    info.className = 'rating-pill tr-info';
-    info.innerText = "Loading..."
+    info.className = 'rating-pill tr-info loading';
+
+    const head = document.createElement('span')
+    head.className = 'pill-label'
+    head.innerText = "TR"
+    info.appendChild(head)
 
     container.appendChild(info)
     return info
@@ -196,13 +201,19 @@ function showUTRLogin(container) {
 
 function showLoadingUTR(container, label) {
     const info = document.createElement('span');
-    info.className = 'rating-pill utr-info';
-    info.innerText = `${label} Loading...`
+    info.className = 'rating-pill utr-info loading';
+
+    const head = document.createElement('span')
+    head.className = 'pill-label'
+    head.innerText = label
+    info.appendChild(head)
+
     container.appendChild(info)
     return info
 }
 
 function showUTRRating(info, label, profileURL, rating) {
+    info.classList.remove('loading')
     info.innerText = ""
 
     const head = document.createElement('span')
