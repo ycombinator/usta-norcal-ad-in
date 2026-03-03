@@ -28,7 +28,7 @@ function showRating(info, trURL, rating) {
 
 function showLoading(container) {
     const info = document.createElement('span');
-    info.className = 'tr-info';
+    info.className = 'rating-pill tr-info';
     info.innerText = "Loading..."
 
     container.appendChild(info)
@@ -177,7 +177,7 @@ async function checkUTRAuth() {
 
 function showUTRLogin(container) {
     const info = document.createElement('span')
-    info.className = 'utr-info'
+    info.className = 'rating-pill utr-info'
 
     const head = document.createElement('h4')
     head.innerText = "UTR"
@@ -194,7 +194,7 @@ function showUTRLogin(container) {
 
 function showLoadingUTR(container, label) {
     const info = document.createElement('span');
-    info.className = 'utr-info';
+    info.className = 'rating-pill utr-info';
     info.innerText = `${label} Loading...`
     container.appendChild(info)
     return info

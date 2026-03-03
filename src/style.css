@@ -1,77 +1,55 @@
-.tr-info {
+.rating-pill {
   font-size: small;
   margin-left: 2px;
-  background: darkblue;
   border-radius: 4px;
   color: #fff;
-
   text-align: center;
   vertical-align: middle;
 }
 
-.tr-info a {
+.rating-pill a {
   padding: 0px;
   margin: auto 4px auto 0px;
 }
 
-.tr-info a:link {
+.rating-pill a:link,
+.rating-pill a:active,
+.rating-pill a:visited {
   color: #fff;
 }
-.tr-info a:active {
+
+.rating-pill a:hover {
   color: #fff;
 }
-.tr-info a:hover {
+
+.rating-pill h4 {
   color: #fff;
+  font-size: smaller;
+  margin: auto 4px auto 0px;
+  padding: 0px;
+  display: unset;
+}
+
+.tr-info {
   background: darkblue;
 }
-.tr-info a:visited {
-  color: #fff;
+
+.tr-info a:hover {
+  background: darkblue;
 }
 
 .tr-info h4 {
-    color: #fff;
-    background-color: blueviolet;
-    font-size: smaller;
-    margin: auto 4px auto 0px;
-    padding: 0px;
-    display: unset;
+  background-color: blueviolet;
 }
 
 .utr-info {
-  font-size: small;
-  margin-left: 2px;
   background: #1a6b3c;
-  border-radius: 4px;
-  color: #fff;
-
-  text-align: center;
-  vertical-align: middle;
 }
 
-.utr-info a {
-  padding: 0px;
-  margin: auto 4px auto 0px;
-}
-
-.utr-info a:link {
-  color: #fff;
-}
-.utr-info a:active {
-  color: #fff;
-}
 .utr-info a:hover {
-  color: #fff;
   background: #1a6b3c;
-}
-.utr-info a:visited {
-  color: #fff;
 }
 
 .utr-info h4 {
-    color: #fff;
-    background-color: #0d3d22;
-    font-size: smaller;
-    margin: auto 4px auto 0px;
-    padding: 0px;
-    display: unset;
+  background-color: #0d3d22;
 }
