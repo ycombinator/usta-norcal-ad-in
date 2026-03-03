@@ -3,6 +3,7 @@ Chromium extension for enhancing the USTA NorCal website with information and fu
 
 Currently enhancements include:
 - Displaying players' estimated dynamic rating from TennisRecord
+- Displaying players' UTR singles and doubles ratings (requires being logged in to [UTR Sports](https://app.utrsports.net))
 
 ### Building
 
