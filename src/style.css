@@ -36,3 +36,42 @@
     padding: 0px;
     display: unset;
 }
+
+.utr-info {
+  font-size: small;
+  margin-left: 2px;
+  background: #1a6b3c;
+  border-radius: 4px;
+  color: #fff;
+
+  text-align: center;
+  vertical-align: middle;
+}
+
+.utr-info a {
+  padding: 0px;
+  margin: auto 4px auto 0px;
+}
+
+.utr-info a:link {
+  color: #fff;
+}
+.utr-info a:active {
+  color: #fff;
+}
+.utr-info a:hover {
+  color: #fff;
+  background: #1a6b3c;
+}
+.utr-info a:visited {
+  color: #fff;
+}
+
+.utr-info h4 {
+    color: #fff;
+    background-color: #0d3d22;
+    font-size: smaller;
+    margin: auto 4px auto 0px;
+    padding: 0px;
+    display: unset;
+}

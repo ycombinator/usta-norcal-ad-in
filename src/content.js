@@ -127,11 +127,114 @@ async function showTRInfo(container, id) {
     }
 };
 
-// TODO
 async function showUTRInfo(container, id) {
-    // const info = showLoading(container)
+    const singlesInfo = showLoadingUTR(container, "UTR-S")
+    const doublesInfo = showLoadingUTR(container, "UTR-D")
 
-    // https://api.utrsports.net/v2/search/players?query=shaunak+kashyap&top=40&skip=0&distance=25mi&pin=37.33874%2C-121.8852525&utrType=verified&utrTeamType=singles&showTennisContent=true&showPickleballContent=false&searchOrigin=searchPage
+    // Reuse the already-fetched USTA NorCal player page for name and location.
+    let data = await chrome.storage.session.get("ustaNorCalPlayerPageCache");
+    const cache = data.ustaNorCalPlayerPageCache || {}
+    let body = cache[id]
+    if (!body) {
+        body = await fetchUSTANorCalPlayerPage(id)
+    }
+    const { firstName, lastName, location } = parseUSTANorCalPlayerPage(body)
+
+    // Geocode the location string to lat/lng via Nominatim.
+    const { lat, lng } = await geocodeLocation(location)
+
+    // One UTR API call returns both singles and doubles ratings for each player.
+    const player = await fetchUTRPlayer(firstName, lastName, location, lat, lng)
+
+    if (!player) {
+        showUTRRating(singlesInfo, "UTR-S", null, null)
+        showUTRRating(doublesInfo, "UTR-D", null, null)
+        return
+    }
+
+    const profileURL = `https://app.utrsports.net/profiles/${player.id}`
+    // NOTE: field paths below may need adjustment depending on live API response shape.
+    const singlesUtr = player.singlesUtr ?? player.ratings?.singles?.utr ?? null
+    const doublesUtr = player.doublesUtr ?? player.ratings?.doubles?.utr ?? null
+
+    showUTRRating(singlesInfo, "UTR-S", profileURL, singlesUtr)
+    showUTRRating(doublesInfo, "UTR-D", profileURL, doublesUtr)
+}
+
+function showLoadingUTR(container, label) {
+    const info = document.createElement('span');
+    info.className = 'utr-info';
+    info.innerText = `${label} Loading...`
+    container.appendChild(info)
+    return info
+}
+
+function showUTRRating(info, label, profileURL, rating) {
+    info.innerText = ""
+
+    const head = document.createElement('h4')
+    head.innerText = label
+    info.appendChild(head)
+
+    let content
+    if (profileURL && rating != null) {
+        content = document.createElement('a')
+        content.href = profileURL
+        content.target = '_blank'
+        content.innerText = `${rating}`
+    } else {
+        content = document.createElement('span')
+        content.innerText = rating != null ? `${rating}` : "❔"
+    }
+    info.appendChild(content)
+}
+
+async function geocodeLocation(location) {
+    if (!location) return { lat: null, lng: null }
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`
+    return new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: "fetchJSON", url }, data => {
+            if (data && data.length > 0) {
+                resolve({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) })
+            } else {
+                resolve({ lat: null, lng: null })
+            }
+        })
+    })
+}
+
+async function fetchUTRPlayer(firstName, lastName, location, lat, lng) {
+    const query = `${firstName} ${lastName}`
+    const params = new URLSearchParams({
+        query,
+        top: 40,
+        skip: 0,
+        distance: "50mi",
+        utrType: "verified",
+        utrTeamType: "singles",
+        showTennisContent: true,
+        showPickleballContent: false,
+        searchOrigin: "searchPage",
+    })
+    if (location) params.set("location", location)
+    if (lat != null && lng != null) params.set("pin", `${lat},${lng}`)
+
+    const url = `https://api.utrsports.net/v2/search/players?${params}`
+    return new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: "fetchJSON", url }, data => {
+            if (!data) return resolve(null)
+            // NOTE: adjust the path below if the API response shape differs.
+            const hits = data.hits?.hits ?? data.hits ?? []
+            const name = `${firstName} ${lastName}`.toLowerCase()
+            const match = hits.find(h => {
+                const src = h._source ?? h.source ?? h
+                const displayName = (src.displayName ?? src.name ?? "").toLowerCase()
+                return displayName === name
+            })
+            if (!match) return resolve(null)
+            resolve(match._source ?? match.source ?? match)
+        })
+    })
 }
 
 function parseUSTANorCalPlayerPage(body) {
