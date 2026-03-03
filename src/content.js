@@ -152,7 +152,8 @@ async function showTRInfo(container, id) {
 };
 
 async function showUTRInfo(container, id) {
-    const singlesInfo = showLoadingUTR(container, "UTR-S")
+    const mixedDoubles = isMixedDoubles()
+    const singlesInfo = mixedDoubles ? null : showLoadingUTR(container, "UTR-S")
     const doublesInfo = showLoadingUTR(container, "UTR-D")
 
     // Reuse the already-fetched USTA NorCal player page for name and location.
@@ -171,14 +172,14 @@ async function showUTRInfo(container, id) {
     const player = await fetchUTRPlayer(firstName, lastName, location, lat, lng)
 
     if (player === UTR_AUTH_REQUIRED) {
-        singlesInfo.remove()
+        singlesInfo?.remove()
         doublesInfo.remove()
         showUTRLogin(container)
         return
     }
 
     if (!player) {
-        showUTRRating(singlesInfo, "UTR-S", null, null)
+        if (singlesInfo) showUTRRating(singlesInfo, "UTR-S", null, null)
         showUTRRating(doublesInfo, "UTR-D", null, null)
         return
     }
@@ -188,7 +189,7 @@ async function showUTRInfo(container, id) {
     const singlesUtr = player.singlesUtr ?? player.ratings?.singles?.utr ?? null
     const doublesUtr = player.doublesUtr ?? player.ratings?.doubles?.utr ?? null
 
-    showUTRRating(singlesInfo, "UTR-S", profileURL, singlesUtr)
+    if (singlesInfo) showUTRRating(singlesInfo, "UTR-S", profileURL, singlesUtr)
     showUTRRating(doublesInfo, "UTR-D", profileURL, doublesUtr)
 }
 
@@ -391,6 +392,10 @@ async function fetchTennisRecordPlayerPage(firstName, lastName, s) {
     })
 }
 
+
+function isMixedDoubles() {
+    return /MX/.test(document.title)
+}
 
 document.querySelectorAll('a').forEach(showInfo)
 
