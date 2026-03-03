@@ -131,6 +131,14 @@ async function showUTRInfo(container, id) {
     const singlesInfo = showLoadingUTR(container, "UTR-S")
     const doublesInfo = showLoadingUTR(container, "UTR-D")
 
+    const loggedIn = await checkUTRAuth()
+    if (!loggedIn) {
+        singlesInfo.remove()
+        doublesInfo.remove()
+        showUTRLogin(container)
+        return
+    }
+
     // Reuse the already-fetched USTA NorCal player page for name and location.
     let data = await chrome.storage.session.get("ustaNorCalPlayerPageCache");
     const cache = data.ustaNorCalPlayerPageCache || {}
@@ -159,6 +167,29 @@ async function showUTRInfo(container, id) {
 
     showUTRRating(singlesInfo, "UTR-S", profileURL, singlesUtr)
     showUTRRating(doublesInfo, "UTR-D", profileURL, doublesUtr)
+}
+
+async function checkUTRAuth() {
+    return new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: "checkUTRAuth" }, resolve)
+    })
+}
+
+function showUTRLogin(container) {
+    const info = document.createElement('span')
+    info.className = 'utr-info'
+
+    const head = document.createElement('h4')
+    head.innerText = "UTR"
+    info.appendChild(head)
+
+    const link = document.createElement('a')
+    link.href = "https://app.utrsports.net/login"
+    link.target = '_blank'
+    link.innerText = "login"
+    info.appendChild(link)
+
+    container.appendChild(info)
 }
 
 function showLoadingUTR(container, label) {
