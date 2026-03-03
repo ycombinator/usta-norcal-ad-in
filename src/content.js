@@ -29,6 +29,17 @@ function showRating(info, trURL, rating) {
     info.appendChild(content)
 }
 
+function applyLoadingTimeout(info) {
+    setTimeout(() => {
+        if (!info.classList.contains('loading')) return
+        info.classList.remove('loading')
+        const content = document.createElement('span')
+        content.innerText = "⏱"
+        content.title = "Timed out"
+        info.appendChild(content)
+    }, 30000)
+}
+
 function showLoading(container) {
     const info = document.createElement('span');
     info.className = 'rating-pill tr-info loading';
@@ -39,6 +50,7 @@ function showLoading(container) {
     info.appendChild(head)
 
     container.appendChild(info)
+    applyLoadingTimeout(info)
     return info
 }
 
@@ -204,6 +216,7 @@ function showLoadingUTR(container, label) {
     info.appendChild(head)
 
     container.appendChild(info)
+    applyLoadingTimeout(info)
     return info
 }
 
