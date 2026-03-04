@@ -180,7 +180,6 @@ async function showUTRInfo(container, id) {
         }
         const { firstName, lastName, location } = parseUSTANorCalPlayerPage(body)
 
-        // Geocode the location string to lat/lng via Nominatim.
         const { lat, lng } = await geocodeLocation(location)
 
         // One UTR API call returns both singles and doubles ratings for each player.
@@ -268,11 +267,18 @@ function showUTRRating(info, label, profileURL, rating) {
 
 async function geocodeLocation(location) {
     if (!location) return { lat: null, lng: null }
+
+    const cacheKey = `geocode:${location}`
+    const cached = await chrome.storage.local.get(cacheKey)
+    if (cached[cacheKey]) return cached[cacheKey]
+
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`
     return new Promise(resolve => {
         chrome.runtime.sendMessage({ type: "fetchJSON", url }, data => {
             if (data && data.length > 0) {
-                resolve({ lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) })
+                const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+                chrome.storage.local.set({ [cacheKey]: result })
+                resolve(result)
             } else {
                 resolve({ lat: null, lng: null })
             }
