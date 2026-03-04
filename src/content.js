@@ -149,24 +149,44 @@ async function showTRInfo(container, id) {
     }
 };
 
+const UTR_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+
+async function getCachedUTRPlayer(id) {
+    const data = await chrome.storage.local.get(`utrPlayer:${id}`)
+    const entry = data[`utrPlayer:${id}`]
+    if (!entry) return undefined
+    if (Date.now() - entry.timestamp > UTR_CACHE_TTL_MS) return undefined
+    return entry.value === "AUTH_REQUIRED" ? UTR_AUTH_REQUIRED : entry.value
+}
+
+async function setCachedUTRPlayer(id, player) {
+    const value = player === UTR_AUTH_REQUIRED ? "AUTH_REQUIRED" : player
+    await chrome.storage.local.set({ [`utrPlayer:${id}`]: { value, timestamp: Date.now() } })
+}
+
 async function showUTRInfo(container, id) {
     const singlesInfo = settings.showUTRS ? showLoadingUTR(container, "UTR-S") : null
     const doublesInfo = settings.showUTRD ? showLoadingUTR(container, "UTR-D") : null
 
-    // Reuse the already-fetched USTA NorCal player page for name and location.
-    let data = await chrome.storage.session.get("ustaNorCalPlayerPageCache");
-    const cache = data.ustaNorCalPlayerPageCache || {}
-    let body = cache[id]
-    if (!body) {
-        body = await fetchUSTANorCalPlayerPage(id)
+    let player = await getCachedUTRPlayer(id)
+
+    if (player === undefined) {
+        // Reuse the already-fetched USTA NorCal player page for name and location.
+        let data = await chrome.storage.session.get("ustaNorCalPlayerPageCache");
+        const cache = data.ustaNorCalPlayerPageCache || {}
+        let body = cache[id]
+        if (!body) {
+            body = await fetchUSTANorCalPlayerPage(id)
+        }
+        const { firstName, lastName, location } = parseUSTANorCalPlayerPage(body)
+
+        // Geocode the location string to lat/lng via Nominatim.
+        const { lat, lng } = await geocodeLocation(location)
+
+        // One UTR API call returns both singles and doubles ratings for each player.
+        player = await fetchUTRPlayer(firstName, lastName, location, lat, lng)
+        await setCachedUTRPlayer(id, player)
     }
-    const { firstName, lastName, location } = parseUSTANorCalPlayerPage(body)
-
-    // Geocode the location string to lat/lng via Nominatim.
-    const { lat, lng } = await geocodeLocation(location)
-
-    // One UTR API call returns both singles and doubles ratings for each player.
-    const player = await fetchUTRPlayer(firstName, lastName, location, lat, lng)
 
     if (player === UTR_AUTH_REQUIRED) {
         singlesInfo?.remove()
