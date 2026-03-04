@@ -289,12 +289,16 @@ async function geocodeLocation(location) {
 const UTR_AUTH_REQUIRED = Symbol('UTR_AUTH_REQUIRED')
 
 async function fetchUTRPlayer(firstName, lastName, location, lat, lng) {
+    // Require geocoded coordinates — without them we can't enforce proximity
+    // and risk matching a same-named player in a completely different city.
+    if (lat == null || lng == null) return null
+
     const query = `${firstName} ${lastName}`
     const params = new URLSearchParams({
         query,
         top: 40,
         skip: 0,
-        distance: "50mi",
+        distance: "20mi",
         utrType: "verified",
         utrTeamType: "singles",
         showTennisContent: true,
@@ -302,7 +306,7 @@ async function fetchUTRPlayer(firstName, lastName, location, lat, lng) {
         searchOrigin: "searchPage",
     })
     if (location) params.set("location", location)
-    if (lat != null && lng != null) params.set("pin", `${lat},${lng}`)
+    params.set("pin", `${lat},${lng}`)
 
     const url = `https://api.utrsports.net/v2/search/players?${params}`
     return new Promise(resolve => {
