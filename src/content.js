@@ -152,8 +152,7 @@ async function showTRInfo(container, id) {
 };
 
 async function showUTRInfo(container, id) {
-    const mixedDoubles = isMixedDoubles()
-    const singlesInfo = mixedDoubles ? null : showLoadingUTR(container, "UTR-S")
+    const singlesInfo = showLoadingUTR(container, "UTR-S")
     const doublesInfo = showLoadingUTR(container, "UTR-D")
 
     // Reuse the already-fetched USTA NorCal player page for name and location.
@@ -392,10 +391,6 @@ async function fetchTennisRecordPlayerPage(firstName, lastName, s) {
     })
 }
 
-
-function isMixedDoubles() {
-    return /MX/.test(document.title)
-}
 
 document.querySelectorAll('a').forEach(showInfo)
 
