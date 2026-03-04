@@ -7,14 +7,28 @@
       body {
         font-family: Arial, sans-serif;
         margin: 10px;
+        min-width: 220px;
       }
+      h1 { font-size: 16px; margin-bottom: 8px; }
+      .setting { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+      .setting label { cursor: pointer; }
     </style>
   </head>
   <body>
     <h1>USTA NorCal Ad In</h1>
-    <p>Enhance the USTA NorCal website with information and functionality. Currently enhancements include:</p>
-    <ul>
-      <li>Displaying players' estimated dynamic rating from TennisRecord</li>
-    </ul>
+    <p style="margin-bottom:10px;">Show ratings:</p>
+    <div class="setting">
+      <input type="checkbox" id="showTR">
+      <label for="showTR">TR (TennisRecord)</label>
+    </div>
+    <div class="setting">
+      <input type="checkbox" id="showUTRS">
+      <label for="showUTRS">UTR-S (Singles)</label>
+    </div>
+    <div class="setting">
+      <input type="checkbox" id="showUTRD">
+      <label for="showUTRD">UTR-D (Doubles)</label>
+    </div>
+    <script src="popup.js"></script>
   </body>
 </html>

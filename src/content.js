@@ -67,10 +67,8 @@ function showInfo(target) {
     const id = matches[1]
 
     const container = target.parentElement
-    // Show TR info
-    showTRInfo(container, id)
-    // Show UTR info
-    showUTRInfo(container, id)
+    if (settings.showTR) showTRInfo(container, id)
+    if (settings.showUTRS || settings.showUTRD) showUTRInfo(container, id)
 }
 
 async function showTRInfo(container, id) {
@@ -152,8 +150,8 @@ async function showTRInfo(container, id) {
 };
 
 async function showUTRInfo(container, id) {
-    const singlesInfo = showLoadingUTR(container, "UTR-S")
-    const doublesInfo = showLoadingUTR(container, "UTR-D")
+    const singlesInfo = settings.showUTRS ? showLoadingUTR(container, "UTR-S") : null
+    const doublesInfo = settings.showUTRD ? showLoadingUTR(container, "UTR-D") : null
 
     // Reuse the already-fetched USTA NorCal player page for name and location.
     let data = await chrome.storage.session.get("ustaNorCalPlayerPageCache");
@@ -172,14 +170,14 @@ async function showUTRInfo(container, id) {
 
     if (player === UTR_AUTH_REQUIRED) {
         singlesInfo?.remove()
-        doublesInfo.remove()
+        doublesInfo?.remove()
         showUTRLogin(container)
         return
     }
 
     if (!player) {
         if (singlesInfo) showUTRRating(singlesInfo, "UTR-S", null, null)
-        showUTRRating(doublesInfo, "UTR-D", null, null)
+        if (doublesInfo) showUTRRating(doublesInfo, "UTR-D", null, null)
         return
     }
 
@@ -189,7 +187,7 @@ async function showUTRInfo(container, id) {
     const doublesUtr = player.doublesUtr ?? player.ratings?.doubles?.utr ?? null
 
     if (singlesInfo) showUTRRating(singlesInfo, "UTR-S", profileURL, singlesUtr)
-    showUTRRating(doublesInfo, "UTR-D", profileURL, doublesUtr)
+    if (doublesInfo) showUTRRating(doublesInfo, "UTR-D", profileURL, doublesUtr)
 }
 
 
@@ -392,5 +390,39 @@ async function fetchTennisRecordPlayerPage(firstName, lastName, s) {
 }
 
 
-document.querySelectorAll('a').forEach(showInfo)
+const DEFAULTS = { showTR: true, showUTRS: true, showUTRD: true }
+let settings = { ...DEFAULTS }
+
+chrome.storage.sync.get(DEFAULTS, s => {
+    settings = s
+    document.querySelectorAll('a').forEach(showInfo)
+})
+
+chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'sync') return
+
+    for (const [key, { newValue }] of Object.entries(changes)) {
+        settings[key] = newValue
+    }
+
+    const trChanged = 'showTR' in changes
+    const utrChanged = 'showUTRS' in changes || 'showUTRD' in changes
+
+    document.querySelectorAll('a').forEach(target => {
+        const matches = target.href.match(/playermatches\.asp\?id=(\d+)$/)
+        if (!matches) return
+        const id = matches[1]
+        const container = target.parentElement
+
+        if (trChanged) {
+            container.querySelectorAll('.tr-info').forEach(el => el.remove())
+            if (settings.showTR) showTRInfo(container, id)
+        }
+
+        if (utrChanged) {
+            container.querySelectorAll('.utr-info, .utr-login').forEach(el => el.remove())
+            if (settings.showUTRS || settings.showUTRD) showUTRInfo(container, id)
+        }
+    })
+})
 
