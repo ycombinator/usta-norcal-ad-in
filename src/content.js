@@ -150,6 +150,7 @@ async function showTRInfo(container, id) {
 };
 
 async function showUTRInfo(container, id) {
+    console.log(`[UTR] showUTRInfo start — player id=${id}`)
     const singlesInfo = settings.showUTRS ? showLoadingUTR(container, "UTR-S") : null
     const doublesInfo = settings.showUTRD ? showLoadingUTR(container, "UTR-D") : null
 
@@ -158,16 +159,29 @@ async function showUTRInfo(container, id) {
     const cache = data.ustaNorCalPlayerPageCache || {}
     let body = cache[id]
     if (!body) {
+        console.log(`[UTR] fetching USTA NorCal player page for id=${id}`)
         body = await fetchUSTANorCalPlayerPage(id)
+        console.log(`[UTR] USTA NorCal player page fetched — body length=${body?.length ?? 'null'}`)
+    } else {
+        console.log(`[UTR] USTA NorCal player page for id=${id} served from cache`)
     }
     const { firstName, lastName, location } = parseUSTANorCalPlayerPage(body)
+    console.log(`[UTR] parsed player — firstName=${firstName}, lastName=${lastName}, location=${location}`)
 
     const { lat, lng } = await geocodeLocation(location)
+    console.log(`[UTR] geocoded location="${location}" — lat=${lat}, lng=${lng}`)
+
+    if (lat == null || lng == null) {
+        console.warn(`[UTR] geocoding failed for location="${location}" — skipping UTR lookup`)
+    }
 
     // Always fetch fresh from UTR — this is the auth check too.
+    console.log(`[UTR] fetching UTR player — query="${firstName} ${lastName}", location=${location}, lat=${lat}, lng=${lng}`)
     const player = await fetchUTRPlayer(firstName, lastName, location, lat, lng)
+    console.log(`[UTR] fetchUTRPlayer result:`, player === UTR_AUTH_REQUIRED ? 'UTR_AUTH_REQUIRED' : player)
 
     if (player === UTR_AUTH_REQUIRED) {
+        console.warn(`[UTR] auth required — user not logged in to UTR`)
         singlesInfo?.remove()
         doublesInfo?.remove()
         showUTRLogin(container)
@@ -175,6 +189,7 @@ async function showUTRInfo(container, id) {
     }
 
     if (!player) {
+        console.log(`[UTR] no matching player found for "${firstName} ${lastName}"`)
         if (singlesInfo) showUTRRating(singlesInfo, "UTR-S", null, null)
         if (doublesInfo) showUTRRating(doublesInfo, "UTR-D", null, null)
         return
@@ -184,6 +199,8 @@ async function showUTRInfo(container, id) {
     // NOTE: field paths below may need adjustment depending on live API response shape.
     const singlesUtr = player.singlesUtr ?? player.ratings?.singles?.utr ?? null
     const doublesUtr = player.doublesUtr ?? player.ratings?.doubles?.utr ?? null
+    console.log(`[UTR] matched player id=${player.id}, singlesUtr=${singlesUtr}, doublesUtr=${doublesUtr}`)
+    console.log(`[UTR] raw player object:`, JSON.stringify(player))
 
     if (singlesInfo) showUTRRating(singlesInfo, "UTR-S", profileURL, singlesUtr)
     if (doublesInfo) showUTRRating(doublesInfo, "UTR-D", profileURL, doublesUtr)
@@ -246,21 +263,31 @@ function showUTRRating(info, label, profileURL, rating) {
 }
 
 async function geocodeLocation(location) {
-    if (!location) return { lat: null, lng: null }
+    if (!location) {
+        console.warn(`[UTR] geocodeLocation called with empty location`)
+        return { lat: null, lng: null }
+    }
 
     location = location.trim().toLowerCase()
     const cacheKey = `geocode:${location}`
     const cached = await chrome.storage.local.get(cacheKey)
-    if (cached[cacheKey]) return cached[cacheKey]
+    if (cached[cacheKey]) {
+        console.log(`[UTR] geocode cache hit for "${location}":`, cached[cacheKey])
+        return cached[cacheKey]
+    }
 
     const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(location)}&format=json&limit=1`
+    console.log(`[UTR] geocoding "${location}" via Nominatim — url=${url}`)
     return new Promise(resolve => {
         chrome.runtime.sendMessage({ type: "fetchJSON", url }, data => {
+            console.log(`[UTR] Nominatim response for "${location}":`, data)
             if (data && data.length > 0) {
                 const result = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) }
+                console.log(`[UTR] geocode result for "${location}":`, result)
                 chrome.storage.local.set({ [cacheKey]: result })
                 resolve(result)
             } else {
+                console.warn(`[UTR] geocode returned no results for "${location}"`)
                 resolve({ lat: null, lng: null })
             }
         })
@@ -272,7 +299,10 @@ const UTR_AUTH_REQUIRED = Symbol('UTR_AUTH_REQUIRED')
 async function fetchUTRPlayer(firstName, lastName, location, lat, lng) {
     // Require geocoded coordinates — without them we can't enforce proximity
     // and risk matching a same-named player in a completely different city.
-    if (lat == null || lng == null) return null
+    if (lat == null || lng == null) {
+        console.warn(`[UTR] fetchUTRPlayer skipped — no coordinates for "${firstName} ${lastName}"`)
+        return null
+    }
 
     const query = `${firstName} ${lastName}`
     const params = new URLSearchParams({
@@ -290,24 +320,43 @@ async function fetchUTRPlayer(firstName, lastName, location, lat, lng) {
     params.set("pin", `${lat},${lng}`)
 
     const url = `https://api.utrsports.net/v2/search/players?${params}`
+    console.log(`[UTR] API request — url=${url}`)
     return new Promise(resolve => {
         chrome.runtime.sendMessage({ type: "fetchJSONWithStatus", url }, result => {
-            if (!result) return resolve(null)
-            const data = result.data
-            if (!data) return resolve(null)
+            console.log(`[UTR] API raw result for "${firstName} ${lastName}":`, result)
+            if (!result) {
+                console.error(`[UTR] API returned null/undefined result`)
+                return resolve(null)
+            }
+            const { status, data } = result
+            console.log(`[UTR] API HTTP status=${status}`)
+            if (!data) {
+                console.error(`[UTR] API response missing data field — full result:`, JSON.stringify(result))
+                return resolve(null)
+            }
             // NOTE: adjust the path below if the API response shape differs.
             const hits = data.hits?.hits ?? data.hits ?? []
+            console.log(`[UTR] API hits count=${hits.length}`)
+            if (hits.length > 0) {
+                console.log(`[UTR] first hit sample:`, JSON.stringify(hits[0]))
+            }
             // Detect unauthenticated: UTR returns showDecimals=false and masked "0.xx" ratings when not logged in
             if (hits.length > 0 && (hits[0]._source ?? hits[0].source ?? hits[0]).showDecimals === false) {
+                console.warn(`[UTR] showDecimals=false detected — user not authenticated`)
                 return resolve(UTR_AUTH_REQUIRED)
             }
             const name = `${firstName} ${lastName}`.toLowerCase()
             const match = hits.find(h => {
                 const src = h._source ?? h.source ?? h
                 const displayName = (src.displayName ?? src.name ?? "").toLowerCase()
+                console.log(`[UTR] comparing "${displayName}" to "${name}"`)
                 return displayName === name
             })
-            if (!match) return resolve(null)
+            if (!match) {
+                console.log(`[UTR] no exact name match found for "${name}" among ${hits.length} hits`)
+                return resolve(null)
+            }
+            console.log(`[UTR] matched hit:`, JSON.stringify(match))
             resolve(match._source ?? match.source ?? match)
         })
     })
