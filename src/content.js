@@ -341,7 +341,7 @@ async function fetchUTRPlayer(firstName, lastName, location, lat, lng) {
                 console.log(`[UTR] first hit sample:`, JSON.stringify(hits[0]))
             }
             // Detect unauthenticated: UTR returns showDecimals=false and masked "0.xx" ratings when not logged in
-            if (hits.length > 0 && (hits[0]._source ?? hits[0].source ?? hits[0]).showDecimals === false) {
+            if (hits.length > 0 && hits[0].source.showDecimals === false) {
                 console.warn(`[UTR] showDecimals=false detected — user not authenticated`)
                 return resolve(UTR_AUTH_REQUIRED)
             }
