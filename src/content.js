@@ -68,7 +68,9 @@ function showInfo(target) {
 
     if (target.textContent.trim() === 'My Profile') return
 
-    const container = target.parentElement
+    const container = document.createElement('span')
+    target.replaceWith(container)
+    container.appendChild(target)
     if (settings.showTR) showTRInfo(container, id)
     if (settings.showUTRS || settings.showUTRD) showUTRInfo(container, id)
 }
@@ -130,7 +132,6 @@ async function showTRInfo(container, id) {
             }
             const { trLocation, trRating } = parseTennisRecordPlayerPage(body, firstName, lastName)
             if (location == trLocation) {
-                // console.log("location match!")
                 trURL = url
                 rating = trRating
 
