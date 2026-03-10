@@ -66,6 +66,8 @@ function showInfo(target) {
     }
     const id = matches[1]
 
+    if (target.textContent.trim() === 'My Profile') return
+
     const container = target.parentElement
     if (settings.showTR) showTRInfo(container, id)
     if (settings.showUTRS || settings.showUTRD) showUTRInfo(container, id)
