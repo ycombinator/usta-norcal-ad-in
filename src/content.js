@@ -422,7 +422,8 @@ function parseTennisRecordPlayerPage(body, firstName, lastName) {
             return
         }
 
-        trRating = text.trim()
+        const parts = text.trim().split(' ')
+        trRating = parseFloat(parts[0]).toFixed(2) + (parts[1] ? ` ${parts[1]}` : '')
         // console.log({ firstName, lastName, trRating})
         return
     })
