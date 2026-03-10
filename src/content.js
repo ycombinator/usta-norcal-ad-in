@@ -105,7 +105,7 @@ async function showTRInfo(container, id) {
     }
     const body = ustaNorCalPlayerPageCache[id]
 
-    const { firstName, lastName, location } = parseUSTANorCalPlayerPage(body)
+    const { firstName, lastName, location, teamNames } = parseUSTANorCalPlayerPage(body)
 
     // Fetch TennisRecord player page and parse out player's
     // estimated dynamic rating.
@@ -130,8 +130,9 @@ async function showTRInfo(container, id) {
                 info.querySelector('span:last-child').title = "TennisRecord lookup failed"
                 return
             }
-            const { trLocation, trRating } = parseTennisRecordPlayerPage(body, firstName, lastName)
-            if (location == trLocation) {
+            const { trLocation, trRating, trTeamNames } = parseTennisRecordPlayerPage(body, firstName, lastName)
+            const teamMatch = trTeamNames.some(t => teamNames.includes(t))
+            if (teamMatch || location == trLocation) {
                 trURL = url
                 rating = trRating
 
@@ -392,8 +393,14 @@ function parseUSTANorCalPlayerPage(body) {
         }
     })
 
+    const teamNames = []
+    document.querySelectorAll('a[href*="teaminfo.asp"]').forEach(a => {
+        const name = a.innerText.trim().replace(/\s*\[.*?\]\s*$/, '')
+        if (name) teamNames.push(name)
+    })
+
     // console.log({firstName, lastName, location})
-    return {firstName, lastName, location}
+    return {firstName, lastName, location, teamNames}
 }
 
 function parseTennisRecordPlayerPage(body, firstName, lastName) {
@@ -431,7 +438,12 @@ function parseTennisRecordPlayerPage(body, firstName, lastName) {
         return
     })
 
-    return {trLocation, trRating}
+    const trTeamNames = []
+    document.querySelectorAll('a[href*="/adult/teamprofile.aspx"]').forEach(a => {
+        trTeamNames.push(a.innerText.trim())
+    })
+
+    return {trLocation, trRating, trTeamNames}
 }
 
 async function fetchUSTANorCalPlayerPage(id) {
