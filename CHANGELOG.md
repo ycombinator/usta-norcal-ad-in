@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.0
+- Automatically invalidate cached TR ratings when TennisRecord's rating date changes, ensuring stale ratings are refreshed without restarting the browser
+
 ## 0.4.0
 - Match TennisRecord players by cross-referencing team history from USTA NorCal and TennisRecord profiles, fixing cases where location strings don't match
 - Fix rating pills appearing on the "My Profile" nav link
