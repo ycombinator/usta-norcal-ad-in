@@ -3,6 +3,7 @@ const dynamicRatingRegexp = /^[0-9].[0-9]{4}(\s+[A-Z])?$/
 let ustaNorCalPlayerPageCache
 let tennisRecordRatingCache, tennisRecordPlayerPageCache
 let utrRecordRatingCache, utrRecordPlayerAPICache
+let trRatingDateCheckStarted = false
 
 function showRating(info, trURL, rating) {
     // console.log({info, trURL, rating})
@@ -75,8 +76,39 @@ function showInfo(target) {
     if (settings.showUTRS || settings.showUTRD) showUTRInfo(container, id)
 }
 
+async function checkTRRatingDate(id) {
+    let data = await chrome.storage.session.get("ustaNorCalPlayerPageCache")
+    const cache = data.ustaNorCalPlayerPageCache || {}
+    let body = cache[id]
+    if (!body) {
+        body = await fetchUSTANorCalPlayerPage(id)
+    }
+    const { firstName, lastName } = parseUSTANorCalPlayerPage(body)
+
+    const { url, body: trBody } = await fetchTennisRecordPlayerPage(firstName, lastName, 1)
+    if (!trBody) return
+    const { trRatingDate } = parseTennisRecordPlayerPage(trBody, firstName, lastName)
+    if (!trRatingDate) return
+
+    const fetched = new Date(trRatingDate)
+    data = await chrome.storage.session.get("trRatingDate")
+    const cached = data.trRatingDate ? new Date(data.trRatingDate) : null
+
+    if (!cached || fetched > cached) {
+        console.log(`[TR] rating date changed: ${data.trRatingDate || 'none'} -> ${trRatingDate}, invalidating cache`)
+        await chrome.storage.session.set({ trRatingDate })
+        await chrome.storage.session.remove("ratingCache")
+        tennisRecordRatingCache = {}
+    }
+}
+
 async function showTRInfo(container, id) {
     const info = showLoading(container)
+
+    if (!trRatingDateCheckStarted) {
+        trRatingDateCheckStarted = true
+        checkTRRatingDate(id)
+    }
 
     let data = await chrome.storage.session.get("ratingCache");
     tennisRecordRatingCache = data.ratingCache || {}
@@ -438,12 +470,19 @@ function parseTennisRecordPlayerPage(body, firstName, lastName) {
         return
     })
 
+    let trRatingDate
+    document.querySelectorAll("dd").forEach(dd => {
+        if (trRatingDate) return
+        const match = dd.textContent.match(/(\d{1,2}\/\d{1,2}\/\d{4})/)
+        if (match) trRatingDate = match[1]
+    })
+
     const trTeamNames = []
     document.querySelectorAll('a[href*="/adult/teamprofile.aspx"]').forEach(a => {
         trTeamNames.push(a.innerText.trim())
     })
 
-    return {trLocation, trRating, trTeamNames}
+    return {trLocation, trRating, trRatingDate, trTeamNames}
 }
 
 async function fetchUSTANorCalPlayerPage(id) {
