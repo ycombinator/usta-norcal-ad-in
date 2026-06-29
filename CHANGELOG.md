@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.5.1
+- Fix UTR player matching failing when UTR's `displayName` has a trailing space
+
 ## 0.5.0
 - Automatically invalidate cached TR ratings when TennisRecord's rating date changes, ensuring stale ratings are refreshed without restarting the browser
 

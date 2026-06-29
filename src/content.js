@@ -384,7 +384,7 @@ async function fetchUTRPlayer(firstName, lastName, location, lat, lng) {
             const name = `${firstName} ${lastName}`.toLowerCase()
             const match = hits.find(h => {
                 const src = h._source ?? h.source ?? h
-                const displayName = (src.displayName ?? src.name ?? "").toLowerCase()
+                const displayName = (src.displayName ?? src.name ?? "").trim().toLowerCase()
                 console.log(`[UTR] comparing "${displayName}" to "${name}"`)
                 return displayName === name
             })
